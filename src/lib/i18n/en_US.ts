@@ -1,6 +1,6 @@
 import { I18NConfig } from './i18n';
 
-export const i18n_en_US__core_default: I18NConfig = {
+export const i18n_en_US: I18NConfig = {
   /** core library dependency start, no optional */
   editor: {
     noSelection: 'please select the location to insert the resource first!',

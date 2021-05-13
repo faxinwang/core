@@ -1,6 +1,6 @@
 import { I18NConfig } from './i18n';
 
-export const i18n_zh_CN__core_default: I18NConfig = {
+export const i18n_zh_CN: I18NConfig = {
   /** 核心库依赖，不可缺少 */
   editor: {
     noSelection: '请先选择插入资源位置！',

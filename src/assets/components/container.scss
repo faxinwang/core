@@ -19,17 +19,6 @@
       border-bottom-right-radius: inherit;
     }
   }
-
-  &.textbus-container-full-screen {
-    position: fixed;
-    left: 0;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    border-radius: 0;
-    z-index: 10000;
-    height: auto;
-  }
 }
 
 .textbus-ui {
