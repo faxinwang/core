@@ -245,7 +245,7 @@ export class Editor {
     const parser = injector.get(Parser);
     this.subs.push(
       rootComponent.onChange.pipe(debounceTime(1)).subscribe(() => {
-        renderer.render(rootComponent, contentDocument.body);
+        renderer.render(rootComponent);
         Promise.resolve().then(() => selection.restore());
       }),
 
@@ -318,7 +318,7 @@ export class Editor {
   }
 
   private bootstrap(rootInjector: Injector, contentDocument: Document): Injector {
-    const renderer = new Renderer();
+    const renderer = new Renderer(contentDocument.body);
     const selection = new TBSelection(
       contentDocument,
       fromEvent(contentDocument, 'selectionchange'),

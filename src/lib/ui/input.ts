@@ -405,7 +405,6 @@ export class Input {
           this.handlePaste(div, text);
 
           document.body.removeChild(div);
-          this.history.record();
         });
       }),
       fromEvent(this.input, 'copy').pipe(filter(() => !this.readonly)).subscribe(() => {
@@ -658,7 +657,11 @@ export class Input {
 
   private handlePaste(dom: HTMLElement, text: string) {
     const paste = (element: HTMLElement) => {
-      const fragment = (this.parser.parse(element).getContentAtIndex(0) as DivisionAbstractComponent).slot;
+      let fragment = this.parser.parse(element);
+      const firstContent = fragment.getContentAtIndex(0);
+      if (fragment.length === 1 && firstContent instanceof DivisionAbstractComponent) {
+        fragment = firstContent.slot;
+      }
       if (!this.selection.collapsed) {
         this.dispatchEvent((injector, instance) => {
           const event = new TBEvent(instance);
@@ -683,6 +686,7 @@ export class Input {
     }
     if (!this.pasteMiddlewares.length) {
       paste(dom);
+      this.history.record();
       return;
     }
     this.pasteMiddlewares.reduce((prevPromise, nextMiddleware) => {
@@ -691,6 +695,7 @@ export class Input {
       })
     }, Promise.resolve<HTMLElement>(dom)).then(result => {
       paste(result);
+      this.history.record();
     })
   }
 

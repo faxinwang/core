@@ -97,7 +97,7 @@ export class Renderer {
 
   private oldVDom: VElement;
 
-  constructor() {
+  constructor(private host: HTMLElement) {
     this.onViewUpdated = this.viewUpdateEvent.asObservable();
     this.onRendingBefore = this.rendingEvent.asObservable();
   }
@@ -105,9 +105,8 @@ export class Renderer {
   /**
    * 渲染一个组件到指定的 DOM 容器内
    * @param component 要渲染的组件
-   * @param host 渲染内容的容器
    */
-  render<T extends AbstractComponent>(component: T, host: HTMLElement) {
+  render<T extends AbstractComponent>(component: T) {
     this.rendingEvent.next();
     if (component.changed) {
       const dirty = component.dirty;
@@ -117,12 +116,12 @@ export class Renderer {
         childNodes: [root]
       })
       // hack end
-      this.NVMappingTable.set(host, root);
+      this.NVMappingTable.set(this.host, root);
       if (dirty) {
         if (this.oldVDom) {
-          this.diffAndUpdate(root, this.oldVDom, host);
+          this.diffAndUpdate(root, this.oldVDom, this.host);
         } else {
-          this.patch(root, host);
+          this.patch(root, this.host);
         }
         this.oldVDom = root;
       }

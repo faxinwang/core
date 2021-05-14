@@ -4,21 +4,7 @@ import { tap } from 'rxjs/operators';
 import { TBRange, TBRangePosition } from './range';
 import { Renderer } from './renderer';
 import { Fragment } from './fragment';
-import {
-  AbstractComponent,
-  BackboneAbstractComponent,
-  BranchAbstractComponent,
-  DivisionAbstractComponent
-} from './component';
-import { makeError } from '../_utils/make-error';
-
-/**
- * 记录选区路径数据。
- */
-export interface RangePath {
-  startPaths: number[];
-  endPaths: number[];
-}
+import { AbstractComponent } from './component';
 
 enum CursorMoveDirection {
   Left,
@@ -26,8 +12,6 @@ enum CursorMoveDirection {
   Up,
   Down
 }
-
-const selectionErrorFn = makeError('Selection');
 
 /**
  * TextBus 选区对象
@@ -79,10 +63,10 @@ export class TBSelection {
     return this.ranges.length === 1 && this.firstRange.collapsed || this.ranges.length === 0;
   }
 
+  nativeSelection: Selection;
   onChange: Observable<any>;
 
   private _ranges: TBRange[] = [];
-  private nativeSelection: Selection;
   private selectionChangeEvent = new Subject<void>();
   private isChanged = false;
 
@@ -195,109 +179,6 @@ export class TBSelection {
    */
   createRange() {
     return new TBRange(this.context.createRange(), this.renderer);
-  }
-
-  /**
-   * 获取当前 Selection 所有 Range 的 path
-   */
-  getRangePaths(): Array<RangePath> {
-    const getPaths = (fragment: Fragment): number[] => {
-      const paths = [];
-      while (fragment) {
-        const parentComponent = fragment.parentComponent;
-        if (!parentComponent.parentFragment) {
-          break;
-        }
-        if (parentComponent instanceof BranchAbstractComponent) {
-          paths.push(parentComponent.slots.indexOf(fragment))
-        } else if (parentComponent instanceof BackboneAbstractComponent) {
-          paths.push(parentComponent.indexOf(fragment));
-        } else {
-          paths.push(0);
-        }
-        fragment = parentComponent.parentFragment;
-        if (fragment) {
-          paths.push(fragment.indexOf(parentComponent));
-        }
-      }
-      return paths.reverse();
-    };
-    return this.ranges.map<RangePath>(range => {
-      const paths = getPaths(range.startFragment);
-      paths.push(range.startIndex);
-      if (range.collapsed) {
-        return {
-          startPaths: paths,
-          endPaths: paths
-        }
-      } else {
-        const endPaths = getPaths(range.endFragment);
-        endPaths.push(range.endIndex);
-        return {
-          startPaths: paths,
-          endPaths
-        }
-      }
-    });
-  }
-
-  /**
-   * 将一组路径应用到当前 Selection
-   * @param paths
-   * @param fragment
-   */
-  usePaths(paths: RangePath[], fragment: Fragment) {
-    const findPosition = (position: number[], fragment: Fragment): TBRangePosition => {
-      const paths = position.map(i => i).reverse();
-      while (true) {
-        const index = paths.pop();
-        const c = fragment.getContentAtIndex(index);
-        const last = paths.pop();
-        if (c instanceof DivisionAbstractComponent && last === 0) {
-          fragment = c.slot;
-        } else if (c instanceof BranchAbstractComponent) {
-          fragment = c.slots[last];
-        } else if (c instanceof BackboneAbstractComponent) {
-          fragment = c.getSlotAtIndex(last);
-        } else {
-          throw selectionErrorFn('location of the history range could not be found.')
-        }
-        if (paths.length === 1) {
-          return {
-            fragment,
-            index: paths.pop()
-          }
-        }
-      }
-    };
-    let nativeRange: Range;
-
-    if (this.nativeSelection.rangeCount) {
-      nativeRange = this.nativeSelection.getRangeAt(0);
-    } else {
-      nativeRange = this.context.createRange();
-    }
-
-    const len = paths.length;
-    if (len === 0) {
-      return;
-    }
-
-    const startPaths = paths[0].startPaths;
-    const endPaths = paths[len - 1].endPaths;
-    const start = findPosition(startPaths, fragment);
-    const range = new TBRange(nativeRange, this.renderer);
-
-    range.setStart(start.fragment, start.index);
-
-    if (endPaths === startPaths) {
-      range.setEnd(start.fragment, start.index);
-    } else {
-      const end = findPosition(endPaths, fragment);
-      range.setEnd(end.fragment, end.index);
-    }
-    this.removeAllRanges();
-    this.addRange(range);
   }
 
   /**
