@@ -5,14 +5,20 @@ import { Inject, Injectable, InjectFlags, Injector, Type } from '@tanbo/di';
 import {
   AbstractComponent,
   ComponentSetter,
-  ContextMenuAction, DivisionAbstractComponent,
+  ContextMenuAction,
+  DivisionAbstractComponent,
   Interceptor,
   LeafAbstractComponent,
   Parser,
   Renderer,
   TBEvent,
   TBSelection,
-  KeymapAction, DynamicKeymap
+  KeymapAction,
+  DynamicKeymap,
+  MarkdownGrammarInterceptor,
+  BrComponent,
+  BranchAbstractComponent,
+  BackboneAbstractComponent
 } from '../core/_api';
 import { EDITABLE_DOCUMENT } from '../inject-tokens';
 import { TBHistory } from '../history';
@@ -58,6 +64,7 @@ export class Input {
   private _readonly = false;
 
   private pasteMiddlewares: PastePreHandleMiddleware[] = [];
+  private markdownMatchers: MarkdownGrammarInterceptor[] = [];
 
   private input = document.createElement('textarea');
   private keymaps: KeymapAction[] = [];
@@ -135,6 +142,13 @@ export class Input {
    */
   addContextMenus(actions: ContextMenuAction[]) {
     this.customContextmenuActions.push(actions);
+  }
+
+  /**
+   * 注册 Markdown 语法支持
+   */
+  addMarkdownSupport(config: MarkdownGrammarInterceptor) {
+    this.markdownMatchers.unshift(config);
   }
 
   /**
@@ -296,7 +310,72 @@ export class Input {
         // 处理输入法中间状态时，按回车或其它键时，不需要触发事件
         return !isWriting || !this.input.value;
       })).subscribe((ev: KeyboardEvent) => {
+
         const reg = /\w+/.test(ev.key) ? new RegExp(`^${ev.key}$`, 'i') : new RegExp(`^[${ev.key.replace(/([-\\])/g, '\\$1')}]$`, 'i');
+
+        if (this.editorController.supportMarkdown &&
+          !(isMac ? ev.metaKey : ev.ctrlKey) && !ev.shiftKey && !ev.altKey) {
+          for (const markdownConfig of this.markdownMatchers) {
+            debugger
+            const matchKey = Array.isArray(markdownConfig.key) ?
+              markdownConfig.key.some(k => reg.test(k)) :
+              reg.test(markdownConfig.key);
+            if (matchKey) {
+              const commonAncestorFragment = this.selection.commonAncestorFragment
+              const activeFragmentContents = commonAncestorFragment.sliceContents();
+              const content = activeFragmentContents[0];
+              if (activeFragmentContents.length > 2 || typeof content !== 'string') {
+                continue;
+              }
+              if (!activeFragmentContents[1] || !(activeFragmentContents[1] instanceof BrComponent)) {
+                continue;
+              }
+              let matchContent = false
+              if (markdownConfig.match instanceof RegExp) {
+                matchContent = markdownConfig.match.test(content);
+              } else if (typeof markdownConfig.match === 'function') {
+                matchContent = markdownConfig.match(content);
+              }
+              if (matchContent) {
+                const component = markdownConfig.componentFactory();
+                const parentComponent = commonAncestorFragment.parentComponent;
+                const firstRange = this.selection.firstRange;
+                if (component instanceof DivisionAbstractComponent) {
+                  firstRange.setPosition(component.slot, 0);
+                } else if (component instanceof BranchAbstractComponent) {
+                  firstRange.setPosition(component.slots[0], 0);
+                } else if (component instanceof BackboneAbstractComponent) {
+                  firstRange.setPosition(component.getSlotAtIndex(0), 0);
+                } else {
+                  commonAncestorFragment.clean();
+                  commonAncestorFragment.append(component);
+                  firstRange.setPosition(commonAncestorFragment, 1);
+                  ev.preventDefault();
+                  return;
+                }
+                if (parentComponent) {
+                  const parentFragment = parentComponent.parentFragment;
+                  if (parentComponent instanceof DivisionAbstractComponent) {
+                    const index = parentFragment.indexOf(parentComponent);
+                    parentFragment.remove(index, index + 1);
+                    parentFragment.insert(component, index);
+                  } else {
+                    commonAncestorFragment.clean()
+                    commonAncestorFragment.append(component);
+                  }
+                } else {
+                  // root
+                  commonAncestorFragment.clean();
+                  commonAncestorFragment.append(component);
+                }
+
+                ev.preventDefault();
+                return;
+              }
+            }
+          }
+        }
+
         let hasMatched = false;
         const invokeKeymaps = (keymaps: KeymapAction[]) => {
           for (const config of keymaps) {

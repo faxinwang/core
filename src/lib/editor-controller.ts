@@ -3,10 +3,20 @@ import { BehaviorSubject, Observable } from 'rxjs';
 export interface GlobalStatus {
   readonly: boolean;
   sourcecodeMode: boolean;
+  supportMarkdown: boolean
 }
 
 export class EditorController {
   onStateChange: Observable<GlobalStatus>;
+
+  set supportMarkdown(b: boolean) {
+    this.status.supportMarkdown = b;
+    this.dispatch();
+  }
+
+  get supportMarkdown() {
+    return this.status.supportMarkdown;
+  }
 
   set readonly(b: boolean) {
     this.status.readonly = b;

@@ -1,22 +1,25 @@
 import { from, fromEvent, Observable, of, Subject, Subscription } from 'rxjs';
 import { debounceTime } from 'rxjs/operators';
-import {
-  getAnnotations,
-  Injector,
-  NullInjector,
-  ReflectiveInjector, Type,
-} from '@tanbo/di';
+import { getAnnotations, InjectFlags, Injector, NullInjector, ReflectiveInjector, Type, } from '@tanbo/di';
 
 import {
-  AbstractComponent, BackboneAbstractComponent, BranchAbstractComponent,
+  AbstractComponent,
+  BackboneAbstractComponent,
+  BranchAbstractComponent,
   BrComponent,
-  Component, DivisionAbstractComponent, Fragment, LeafAbstractComponent,
-  OutputRenderer, Parser, Renderer, TBRange, TBSelection, VElementLiteral
+  Component,
+  DivisionAbstractComponent,
+  Fragment,
+  LeafAbstractComponent, MarkdownGrammarInterceptor,
+  MarkdownSupport,
+  OutputRenderer,
+  Parser,
+  Renderer,
+  TBRange,
+  TBSelection,
+  VElementLiteral
 } from './core/_api';
-import {
-  UIControlPanel,
-  UIDialog, Input, Layout, FileUploader, UIMessage
-} from './ui/_api';
+import { FileUploader, Input, Layout, UIControlPanel, UIDialog, UIMessage } from './ui/_api';
 import { HTMLOutputTranslator, OutputTranslator } from './output-translator';
 import { EditorController } from './editor-controller';
 import { makeError } from './_utils/make-error';
@@ -60,6 +63,14 @@ export class Editor {
     return this.stateController.readonly;
   }
 
+  set supportMarkdown(b: boolean) {
+    this.stateController.supportMarkdown = b;
+  }
+
+  get supportMarkdown() {
+    return this.stateController.supportMarkdown;
+  }
+
   private readonly container: HTMLElement;
 
   private componentAnnotations: Component[];
@@ -92,7 +103,8 @@ export class Editor {
     this.onChange = this.changeEvent.asObservable();
     this.stateController = new EditorController({
       readonly: false,
-      sourcecodeMode: false
+      sourcecodeMode: false,
+      supportMarkdown: true
     });
 
     const i18n = new I18n(i18n_zh_CN, options.i18n);
@@ -404,10 +416,18 @@ export class Editor {
         }
       }
     ]);
+    const input = customInjector.get(Input);
     [RootComponent, ...(this.options.components || [])].forEach(c => {
       const metadata = getAnnotations(c).getClassMetadata(Component);
       const annotation = metadata.decoratorArguments[0] as Component;
-      componentInjectors.set(c, new ReflectiveInjector(customInjector, annotation.providers || []));
+      const componentInjector = new ReflectiveInjector(customInjector, annotation.providers || []);
+      componentInjectors.set(c, componentInjector);
+
+      const markdownSupport = componentInjector.get(MarkdownSupport as Type<MarkdownSupport>, null, InjectFlags.Optional);
+      if (markdownSupport) {
+        const markdownGrammarInterceptor = markdownSupport.provide();
+        input.addMarkdownSupport(markdownGrammarInterceptor);
+      }
     });
     return customInjector;
   }
