@@ -15,7 +15,6 @@ import {
   KeymapAction, DynamicKeymap
 } from '../core/_api';
 import { EDITABLE_DOCUMENT } from '../inject-tokens';
-import { RootComponent } from '../root-component';
 import { TBHistory } from '../history';
 import { EditorController } from '../editor-controller';
 import { UIControlPanel } from './plugins/control-panel.plugin';
@@ -97,7 +96,6 @@ export class Input {
               private componentInjectors: ComponentInjectors,
               private renderer: Renderer,
               private message: UIMessage,
-              private rootComponent: RootComponent,
               private parser: Parser,
               private selection: TBSelection,
               private history: TBHistory) {

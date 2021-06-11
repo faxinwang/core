@@ -27,6 +27,7 @@ import { RootComponent } from './root-component';
 import { TBHistory } from './history';
 import { I18n, i18n_zh_CN } from './i18n/_api';
 import { TBPlugin } from './plugin';
+import { HackInput } from './_es-hack';
 
 declare const ResizeObserver: any;
 const editorErrorFn = makeError('Editor');
@@ -337,6 +338,9 @@ export class Editor {
       Input,
       TBHistory,
       RootComponent, {
+        provide: HackInput,
+        useClass: Input
+      }, {
         provide: EDITABLE_DOCUMENT,
         useValue: contentDocument
       }, {

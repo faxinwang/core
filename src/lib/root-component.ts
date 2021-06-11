@@ -17,7 +17,7 @@ import {
   ComponentLoader,
   ViewData, SlotRenderFn, SingleSlotRenderFn,
 } from './core/_api';
-import { Input } from './ui/input';
+import { HackInput } from './_es-hack';
 import { EditorController } from './editor-controller';
 
 @Injectable()
@@ -26,10 +26,13 @@ class RootComponentInterceptor implements Interceptor<RootComponent> {
   private contentSnapshot: Array<AbstractComponent | string> = [];
   private formatterSnapshot = new Map<BlockFormatter | InlineFormatter, FormatRange[]>();
 
+  private rootComponent: RootComponent;
+
   constructor(@Inject(forwardRef(() => TBSelection)) private selection: TBSelection,
-              @Inject(forwardRef(() => Input)) private input: Input,
-              @Inject(forwardRef(() => RootComponent)) private rootComponent: RootComponent,
+              @Inject(forwardRef(() => HackInput)) private input: HackInput,
+              @Inject(forwardRef(() => RootComponent)) rootComponent: any,
               @Inject(forwardRef(() => EditorController)) private editorController: EditorController) {
+    this.rootComponent = rootComponent; // 为了解决提前引用的问题
   }
 
   onInputReady() {
