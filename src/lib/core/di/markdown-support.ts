@@ -7,7 +7,7 @@ export interface MarkdownGrammarInterceptor {
   key: string | string[];
 
   /** 触发执行的方法 */
-  componentFactory(): AbstractComponent;
+  componentFactory(content: string): AbstractComponent;
 }
 
 export abstract class MarkdownSupport {

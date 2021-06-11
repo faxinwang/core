@@ -10,7 +10,7 @@ import {
   Component,
   DivisionAbstractComponent,
   Fragment,
-  LeafAbstractComponent, MarkdownGrammarInterceptor,
+  LeafAbstractComponent,
   MarkdownSupport,
   OutputRenderer,
   Parser,

@@ -316,7 +316,6 @@ export class Input {
         if (this.editorController.supportMarkdown &&
           !(isMac ? ev.metaKey : ev.ctrlKey) && !ev.shiftKey && !ev.altKey) {
           for (const markdownConfig of this.markdownMatchers) {
-            debugger
             const matchKey = Array.isArray(markdownConfig.key) ?
               markdownConfig.key.some(k => reg.test(k)) :
               reg.test(markdownConfig.key);
@@ -327,9 +326,10 @@ export class Input {
               if (activeFragmentContents.length > 2 || typeof content !== 'string') {
                 continue;
               }
-              if (!activeFragmentContents[1] || !(activeFragmentContents[1] instanceof BrComponent)) {
+              if (activeFragmentContents[1] && !(activeFragmentContents[1] instanceof BrComponent)) {
                 continue;
               }
+
               let matchContent = false
               if (markdownConfig.match instanceof RegExp) {
                 matchContent = markdownConfig.match.test(content);
@@ -337,7 +337,10 @@ export class Input {
                 matchContent = markdownConfig.match(content);
               }
               if (matchContent) {
-                const component = markdownConfig.componentFactory();
+                const component = markdownConfig.componentFactory(content);
+                if (!(component instanceof AbstractComponent)) {
+                  continue;
+                }
                 const parentComponent = commonAncestorFragment.parentComponent;
                 const firstRange = this.selection.firstRange;
                 if (component instanceof DivisionAbstractComponent) {
@@ -350,6 +353,7 @@ export class Input {
                   commonAncestorFragment.clean();
                   commonAncestorFragment.append(component);
                   firstRange.setPosition(commonAncestorFragment, 1);
+                  this.dispatchInputReadyEvent();
                   ev.preventDefault();
                   return;
                 }
@@ -359,14 +363,17 @@ export class Input {
                     const index = parentFragment.indexOf(parentComponent);
                     parentFragment.remove(index, index + 1);
                     parentFragment.insert(component, index);
+                    this.dispatchInputReadyEvent();
                   } else {
                     commonAncestorFragment.clean()
                     commonAncestorFragment.append(component);
+                    this.dispatchInputReadyEvent();
                   }
                 } else {
                   // root
                   commonAncestorFragment.clean();
                   commonAncestorFragment.append(component);
+                  this.dispatchInputReadyEvent();
                 }
 
                 ev.preventDefault();
