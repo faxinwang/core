@@ -66,7 +66,7 @@ export class Input {
   private pasteMiddlewares: PastePreHandleMiddleware[] = [];
   private markdownMatchers: MarkdownGrammarInterceptor[] = [];
 
-  private input = document.createElement('textarea');
+  input = document.createElement('textarea');
   private keymaps: KeymapAction[] = [];
 
   readonly elementRef = document.createElement('div');
@@ -829,7 +829,7 @@ export class Input {
     this.context.execCommand('copy');
   }
 
-  private show() {
+  show() {
     this.display = true;
     clearTimeout(this.timer);
     const toggleShowHide = () => {

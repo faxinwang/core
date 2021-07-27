@@ -181,6 +181,30 @@ export class Editor {
     }
   }
 
+  focus(){
+    const selection = this.injector.get(TBSelection);
+    const selectionEl = document.querySelectorAll(".textbus-selection");
+    if(selection.rangeCount == 0){
+      const rootComponent = this.injector.get(RootComponent);
+      const range = selection.createRange();
+      selection.addRange(range);
+      range.setPosition(rootComponent.slot, 0);
+      selectionEl.forEach(el => {
+        (el as HTMLElement).style.top = "0";
+        (el as HTMLElement).style.left = "8px";
+      })
+    }else{
+      const el1 = selectionEl.item(0) as HTMLElement;
+      const el2 = selectionEl.item(1) as HTMLElement;
+      el2.style.height = el1.style.height;
+      el2.style.top = el1.style.top;
+      el2.style.left = el1.style.left;
+    }
+    const input = this.injector.get(Input);
+    input.input.focus();
+    input.show();
+  }
+
   /**
    * 销毁 TextBus 实例。
    */

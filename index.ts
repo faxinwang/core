@@ -26,6 +26,12 @@ const editor = new Editor('#editor', {
   contents: document.getElementById('table').innerHTML
 });
 
+editor.onReady.subscribe(()=>{
+  setTimeout(()=> {
+    editor.focus();
+  }, 1000*4);
+});
+
 document.getElementById('btn').addEventListener('click', () => {
   (editor as any).rootFragment.sliceContents()[1].slot.append('333')
 })
