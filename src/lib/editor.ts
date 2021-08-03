@@ -183,7 +183,7 @@ export class Editor {
 
   focus(){
     const selection = this.injector.get(TBSelection);
-    const selectionEl = document.querySelectorAll(".textbus-selection");
+    const selectionEl = this.layout.pageContainer.querySelectorAll(".textbus-selection");
     if(selection.rangeCount == 0){
       const rootComponent = this.injector.get(RootComponent);
       const range = selection.createRange();
